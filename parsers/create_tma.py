@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""
+IT-News Telegram Mini App
+Uses TMA (Telegram Mini App) WebApp API.
+"""
+import http.server
+import json
+import os
+from datetime import datetime, timezone
+
+WEBAPP_URL = "https://freejam.online/it-news/tma/"
+
+html = r"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>IT-News</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f8f6f2;--surface:#fff;--surface-alt:#f0ede8;
+  --accent:#e85d26;--accent-2:#7c3aed;
+  --habr:#2e9e5b;--reddit:#ff4500;
+  --text:#1c1917;--text-dim:#78716c;--border:#e7e2dc;
+  --shadow:0 2px 12px rgba(0,0,0,.06);--radius:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column}
+
+/* Header */
+.t-header{background:linear-gradient(135deg,#e85d26,#7c3aed);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;color:#fff;flex-shrink:0}
+.t-header h1{font-size:1.1em;font-weight:700}
+.t-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+.t-tab{flex:1;padding:10px;text-align:center;font-size:.85em;font-weight:600;color:var(--text-dim);border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
+.t-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.t-content{flex:1;overflow-y:auto;padding:12px}
+
+/* Calendar */
+.t-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.t-cal-nav button{background:var(--surface);border:1px solid var(--border);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:.9em;color:var(--text-dim)}
+.t-cal-nav span{font-weight:600;font-size:.9em}
+.t-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:.78em;margin-bottom:12px}
+.t-cal-grid .dn{font-weight:600;color:var(--text-dim);padding:3px}
+.t-cal-grid .dc{padding:5px 2px;border-radius:6px;cursor:pointer}
+.t-cal-grid .dc.sel{background:var(--accent);color:#fff;font-weight:700}
+.t-cal-grid .dc.today{font-weight:700;color:var(--accent)}
+.t-cal-grid .dc.has-news{font-weight:700}
+
+/* Cards */
+.t-card{background:var(--surface);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.t-card:active{transform:scale(.99)}
+.t-card h3{font-size:.92em;margin-bottom:4px;line-height:1.4}
+.t-card .t-meta{font-size:.78em;color:var(--text-dim);display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.t-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.75em;font-weight:600}
+.t-badge.r{background:rgba(255,69,0,.1);color:var(--reddit)}
+.t-badge.h{background:rgba(46,158,91,.1);color:var(--habr)}
+.t-card .t-score{font-size:.85em;color:var(--text-dim);margin-top:4px}
+
+/* Empty/Load */
+.t-load{text-align:center;padding:40px;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="t-header">
+    <h1>⚡ IT-News</h1>
+    <span style="font-size:.75em;opacity:.8" id="t-updated"></span>
+  </div>
+  <div class="t-tabs">
+    <div class="t-tab active" onclick="tSwitch('all',this)">Все</div>
+    <div class="t-tab" onclick="tSwitch('reddit',this)">Reddit</div>
+    <div class="t-tab" onclick="tSwitch('habr',this)">Хабр</div>
+  </div>
+
+  <div class="t-content" id="t-content"></div>
+</div>
+
+<script>
+const API='/api';
+let tState={source:'all',day:null};
+
+function tSwitch(s,el){
+  tState.source=s;
+  document.querySelectorAll('.t-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  tLoad();
+}
+
+function tGoDay(d){
+  tState.day=d;
+  tLoad();
+  // Update selected style
+  document.querySelectorAll('.dc').forEach(el=>{
+    el.classList.toggle('sel',el.dataset.date===d);
+  });
+}
+
+async function tLoad(){
+  const c=document.getElementById('t-content');
+  c.innerHTML='<div class="t-load">⏳ Загрузка...</div>';
+
+  let url=API+'/articles?source='+tState.source;
+  if(tState.day) url+='&day='+tState.day;
+
+  try{
+    const r=await fetch(url+'&_='+Date.now());
+    const data=await r.json();
+    let h='';
+
+    // Calendar strip
+    h+='<div class="t-cal-grid"><div class="dn">Пн</div><div class="dn">Вт</div><div class="dn">Ср</div><div class="dn">Чт</div><div class="dn">Пт</div><div class="dn">Сб</div><div class="dn">Вс</div>';
+
+    const now=new Date();
+    const y=now.getFullYear(),m=now.getMonth();
+    const fd=new Date(y,m,1).getDay();
+    const dim=new Date(y,m+1,0).getDate();
+    const dow0=fd===0?6:fd-1;
+
+    // Check which days have news
+    const daysSet=new Set();
+    if(data.articles){
+      data.articles.forEach(a=>{if(a.day_key)daysSet.add(a.day_key)});
+    }
+    const todayStr=y+'-'+String(m+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+
+    for(let i=0;i<dow0;i++) h+='<div></div>';
+    for(let d=1;d<=dim;d++){
+      const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      let cls='dc';
+      if(ds===todayStr) cls+=' today';
+      if(ds===tState.day) cls+=' sel';
+      if(daysSet.has(ds)){cls+=' has-news';
+        h+=`<div class="${cls}" onclick="tGoDay('${ds}')">${d}</div>`;
+      } else {
+        h+=`<div class="${cls}" onclick="tGoDay('${ds}')">${d}</div>`;
+      }
+    }
+    h+='</div>';
+
+    // Cards
+    if(data.articles&&data.articles.length){
+      data.articles.forEach(a=>{
+        const isH=a.source==='habr';
+        h+=`<div class="t-card" onclick="window.open('${a.url}','_blank')">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <h3>${esc(a.title_ru||a.title)}</h3>
+            <span class="t-badge ${isH?'h':'r'}">${isH?'Хабр':'Reddit'}</span>
+          </div>
+          ${a.lead?`<div style="font-size:.82em;color:var(--text-dim);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(a.lead)}</div>`:''}
+          <div class="t-meta">
+            <span>💬 ${a.comments||0}</span>
+            <span>⬆ ${a.score>0?'+':''}${a.score}</span>
+            ${isH&&a.reading_time?`<span>📖 ${a.reading_time} мин</span>`:''}
+            <span>${a.time||'недавно'}</span>
+          </div>
+        </div>`;
+      });
+    } else {
+      h+='<div class="t-load">Нет новостей за этот день</div>';
+    }
+
+    c.innerHTML=h;
+
+    if(data.updated) document.getElementById('t-updated').textContent='Обновлено: '+data.updated;
+
+    // Init TMA
+    if(window.Telegram&&window.Telegram.WebApp){
+      const tg=window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      document.body.style.backgroundColor=tg.themeParams.bg_color||'var(--bg)';
+    }
+  }catch(e){
+    console.error(e);
+    c.innerHTML='<div class="t-load">Ошибка загрузки</div>';
+  }
+}
+
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+tLoad();
+</script>
+</body>
+</html>"""
+
+tma_dir = os.path.join(os.path.dirname(__file__), '..', 'tma')
+os.makedirs(tma_dir, exist_ok=True)
+with open(os.path.join(tma_dir, 'index.html'), 'w', encoding='utf-8') as f:
+    f.write(html)
+
+print(f"Telegram Miniapp создан: {tma_dir}/index.html")
+print(f"Размер: {os.path.getsize(os.path.join(tma_dir, 'index.html'))} bytes")

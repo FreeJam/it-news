@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT-News — Новости из Reddit и Хабра</title>
+<link rel="stylesheet" href="style.css?v=20260512b">
+<link rel="icon" href="icons/pin/icons8-звезда-50.png" type="image/png">
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <img src="icons/pin/ITNews-logo.png" alt="IT-News" class="main-logo">
+  </div>
+  <div class="subtitle" id="subtitle">Главные IT-новости — Reddit &amp; Хабр</div>
+  <div class="update-time" id="updateTime">Загрузка...</div>
+
+  <!-- Source Tabs -->
+  <div class="source-tabs">
+    <div class="source-tab active" id="tabAll" onclick="switchSource('all')">
+      <img src="icons/pin/icons8-новости-50.png" alt="" class="tab-icon" width="27" height="27">
+      Все <span class="count" id="cntAll">—</span>
+    </div>
+    <div class="source-tab" id="tabReddit" onclick="switchSource('reddit')">
+      <img src="icons/pin/reddit-logo.png" alt="" class="tab-icon" width="27" height="27">
+      Reddit <span class="count" id="cntReddit">—</span>
+    </div>
+    <div class="source-tab" id="tabHabr" onclick="switchSource('habr')">
+      <img src="icons/pin/habr-logo.png" alt="" class="tab-icon" width="27" height="27">
+      Хабр <span class="count" id="cntHabr">—</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Calendar Widget -->
+  <div class="calendar-bar" id="calendarBar">
+    <div class="calendar-toggle" onclick="toggleCalendar()">
+      <img src="icons/pin/icons8-планировщик-50.png" alt="" class="cal-icon" width="20" height="20">
+      <span class="cal-label" id="calLabel">Сегодня</span>
+      <span class="cal-arrow" id="calArrow">▼</span>
+    </div>
+    <div class="calendar-dropdown" id="calendarDropdown" style="display:none">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrevMonth()" title="Предыдущий месяц">◀</button>
+        <span class="cal-month-label" id="calMonthLabel">Май 2026</span>
+        <button class="cal-nav-btn" onclick="calNextMonth()" title="Следующий месяц">▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-footer">
+        <button class="cal-today-btn" onclick="calGoToday()">Сегодня</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Filters -->
+  <div class="filters" id="filters">
+    <button class="filter-btn active" onclick="filterNews('all', this)">
+      <img src="icons/pin/icons8-главная-50.png" alt="" class="filter-icon" width="16" height="16"> Все
+    </button>
+    <button class="filter-btn" onclick="filterNews('ai', this)">
+      <img src="icons/pin/icons8-идея-50.png" alt="" class="filter-icon" width="16" height="16"> AI
+    </button>
+    <button class="filter-btn" onclick="filterNews('security', this)">
+      <img src="icons/pin/icons8-щит-50.png" alt="" class="filter-icon" width="16" height="16"> Безопасность
+    </button>
+    <button class="filter-btn" onclick="filterNews('tech', this)">
+      <img src="icons/pin/icons8-контроллер-50.png" alt="" class="filter-icon" width="16" height="16"> Технологии
+    </button>
+    <button class="filter-btn" onclick="filterNews('dev', this)">
+      <img src="icons/pin/icons8-настройки-50.png" alt="" class="filter-icon" width="16" height="16"> Разработка
+    </button>
+    <button class="filter-btn" onclick="filterNews('business', this)">
+      <img src="icons/pin/icons8-бизнесмен-50.png" alt="" class="filter-icon" width="16" height="16"> Бизнес
+    </button>
+  </div>
+
+  <!-- News List -->
+  <div class="news-list" id="newsList">
+    <div class="loading">Загрузка новостей</div>
+  </div>
+</div>
+
+<div class="footer" id="footer">
+  <span id="footerInfo"></span> •
+  <a href="#" onclick="loadAll(); return false;">
+    <img src="icons/pin/icons8-перезапуск-50.png" alt="" class="footer-icon" width="14" height="14"> Обновить
+  </a>
+</div>
+
+<script src="app.js?v=20260512c"></script>
+</body>
+</html>

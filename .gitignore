@@ -1,0 +1,21 @@
+# Logs
+*.log
+cron.log
+api.log
+watchdog.log
+
+# Database (populated by update.sh on deploy)
+db/*.db
+habr-data.json
+news-data.json
+
+# Environment / secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PID files
+*.pid

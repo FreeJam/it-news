@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>IT News</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0c0c14;
+  --surface:#13131f;
+  --surface2:#1a1a2a;
+  --surface3:#22223a;
+  --accent:#7c6af7;
+  --accent-dim:rgba(124,106,247,.18);
+  --accent2:#5ef7c8;
+  --habr:#3dd68c;
+  --reddit:#ff6b4a;
+  --text:#ededf5;
+  --text-dim:#8888a8;
+  --text-muted:#55556a;
+  --border:rgba(255,255,255,.07);
+  --glow:rgba(124,106,247,.15);
+}
+html{
+  font-size:16px;
+  -webkit-text-size-adjust:100%;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter','SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+  line-height:1.5;
+}
+
+/* ===== HEADER ===== */
+.header{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:linear-gradient(to bottom,var(--bg) 70%,transparent);
+  padding:0 0 8px;
+}
+
+/* ===== TOPBAR ===== */
+.topbar{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 20px 12px;
+}
+.topbar-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.topbar .logo{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  width:55px;
+  height:55px;
+  border-radius:10px;
+  object-fit:contain;
+}
+.topbar .logo-text{
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:-.4px;
+  background:linear-gradient(135deg,#fff 0%,#b8b4f0 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.topbar-meta{
+  font-size:11px;
+  color:var(--text-muted);
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.topbar-meta .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ===== TABS ===== */
+.tabs-wrap{
+  padding:0 20px;
+  position:relative;
+}
+.tabs-track{
+  display:flex;
+  background:var(--surface);
+  border-radius:14px;
+  padding:4px;
+  gap:2px;
+  position:relative;
+}
+.tabs-indicator{
+  position:absolute;
+  top:4px;bottom:4px;
+  width:calc(33.333% - 2px);
+  background:var(--accent);
+  border-radius:10px;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 2px 16px rgba(124,106,247,.4);
+}
+.tabs-indicator.pos-0{transform:translateX(0)}
+.tabs-indicator.pos-1{transform:translateX(calc(100% + 2px))}
+.tabs-indicator.pos-2{transform:translateX(calc(200% + 4px))}
+.tab{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:10px 8px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-muted);
+  background:none;
+  border:none;
+  cursor:pointer;
+  position:relative;
+  z-index:1;
+  transition:color .3s;
+  border-radius:10px;
+  -webkit-tap-highlight-color:transparent;
+}
+.tab.active{color:#fff}
+.tab .tab-ico{
+  width:18px;height:18px;
+  object-fit:contain;
+  flex-shrink:0;
+  opacity:.7;
+  transition:opacity .3s;
+}
+.tab.active .tab-ico{opacity:1}
+.tab .count{
+  font-size:10px;
+  font-weight:700;
+  padding:2px 6px;
+  border-radius:6px;
+  background:rgba(255,255,255,.06);
+  color:var(--text-muted);
+  transition:all .3s;
+}
+.tab.active .count{
+  background:rgba(255,255,255,.15);
+  color:#fff;
+}
+
+/* ===== CALENDAR ===== */
+.cal-bar{
+  padding:12px 20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.cal-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .2s;
+  user-select:none;
+  flex:1;
+}
+.cal-toggle:active{background:var(--surface2)}
+.cal-icon{width:16px;height:16px;flex-shrink:0;object-fit:contain;opacity:.6}
+.cal-label{
+  font-size:13px;font-weight:600;color:var(--text);flex:1;
+}
+.cal-arrow{
+  font-size:9px;color:var(--text-muted);
+  transition:transform .25s;
+}
+.cal-dropdown{
+  margin-top:8px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  display:none;
+}
+.cal-dropdown.open{display:block}
+
+.cal-nav{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+}
+.cal-nav-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text-dim);width:32px;height:32px;
+  border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;transition:all .2s;
+}
+.cal-nav-btn:active{background:var(--surface2)}
+.cal-month{font-weight:700;font-size:14px;color:var(--text)}
+
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;
+}
+.cal-grid .day-name{
+  font-size:9px;font-weight:700;color:var(--text-muted);
+  padding:5px 0;text-transform:uppercase;letter-spacing:.5px;
+}
+.cal-grid .cal-day{
+  padding:7px 2px;border-radius:8px;
+  font-size:13px;font-weight:500;
+  color:var(--text-dim);cursor:pointer;
+  position:relative;min-height:36px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.cal-grid .cal-day:active{background:var(--surface2)}
+.cal-grid .cal-day.empty{pointer-events:none;opacity:0}
+.cal-grid .cal-day.today{
+  font-weight:700;color:var(--accent);
+  border:1px solid rgba(124,106,247,.35);
+}
+.cal-grid .cal-day.selected{
+  background:var(--accent);color:#fff;font-weight:700;
+}
+.cal-grid .cal-day.has-news::after{
+  content:'';position:absolute;
+  bottom:3px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;
+  background:var(--accent);
+}
+.cal-grid .cal-day.has-news.selected::after{background:rgba(255,255,255,.7)}
+
+.cal-footer{
+  margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:center;
+}
+.cal-today-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text-dim);padding:6px 16px;
+  border-radius:8px;cursor:pointer;
+  font-size:11px;font-weight:600;transition:all .2s;
+}
+.cal-today-btn:active{background:var(--surface2)}
+
+/* ===== FILTERS ===== */
+.filters{
+  display:flex;gap:8px;padding:0 20px 12px;
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{
+  flex-shrink:0;
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:12px;font-weight:600;
+  background:var(--surface);
+  color:var(--text-dim);
+  border:1px solid var(--border);
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  display:flex;align-items:center;gap:5px;
+}
+.filter-btn .f-ico{width:13px;height:13px;object-fit:contain;opacity:.6}
+.filter-btn.active{
+  background:var(--accent-dim);
+  color:var(--accent);
+  border-color:rgba(124,106,247,.3);
+  box-shadow:0 0 12px rgba(124,106,247,.1);
+}
+.filter-btn.active .f-ico{opacity:1}
+
+/* ===== NEWS LIST ===== */
+.news-list{
+  padding:4px 16px 90px;
+  touch-action:pan-y;
+}
+
+/* ===== NEWS CARD ===== */
+.news-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:0;
+  margin-bottom:12px;
+  overflow:hidden;
+  transition:transform .2s,box-shadow .2s;
+  position:relative;
+}
+.news-card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  padding:1px;
+  background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 50%);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:destination-out;
+  mask-composite:exclude;
+  pointer-events:none;
+}
+.news-card:active{
+  transform:scale(.99);
+  box-shadow:0 2px 20px rgba(0,0,0,.3);
+}
+
+/* Card Header */
+.card-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 16px 0;
+}
+.source-badge{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:3px 10px 3px 6px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+}
+.source-badge.reddit{
+  background:rgba(255,107,74,.15);
+  color:var(--reddit);
+}
+.source-badge.habr{
+  background:rgba(61,214,140,.12);
+  color:var(--habr);
+}
+.source-badge img{
+  width:14px;height:14px;
+  object-fit:contain;
+}
+.card-time{
+  font-size:11px;
+  color:var(--text-muted);
+  margin-left:auto;
+}
+
+/* Card Body */
+.card-body{padding:10px 16px 0}
+.card-title{
+  font-size:16px;
+  font-weight:700;
+  line-height:1.4;
+  color:var(--text);
+  margin-bottom:7px;
+  letter-spacing:-.2px;
+}
+.card-desc{
+  font-size:13.5px;
+  color:var(--text-dim);
+  line-height:1.55;
+  margin-bottom:10px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+/* Card Stats */
+.card-stats{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:10px 16px;
+  border-top:1px solid var(--border);
+}
+.stat{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-muted);
+}
+.stat-ico{font-size:14px;opacity:.8}
+.stat.score{color:var(--accent2)}
+.stat.comments{color:var(--text-dim)}
+.stat.hubs{
+  margin-left:auto;
+  background:var(--surface2);
+  padding:3px 10px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-muted);
+  max-width:160px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Card Footer */
+.card-footer{
+  padding:0 16px 14px;
+}
+.read-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  width:100%;
+  padding:11px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-dim);
+  cursor:pointer;
+  transition:all .2s;
+  text-decoration:none;
+}
+.read-btn:active{
+  background:var(--surface3);
+  color:var(--text);
+}
+.read-btn .arrow{font-size:14px}
+
+/* ===== LOADING ===== */
+.loading{
+  text-align:center;padding:60px 20px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+}
+.skeleton{
+  background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.4s ease-in-out infinite;
+  border-radius:10px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.spinner{
+  width:28px;height:28px;
+  border:2.5px solid var(--accent-dim);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text-muted);font-weight:500}
+
+/* ===== EMPTY ===== */
+.empty{
+  text-align:center;padding:60px 20px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:12px;
+}
+.empty-icon{font-size:48px;opacity:.3}
+.empty-text{font-size:14px;color:var(--text-dim);line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="topbar">
+    <span class="logo-text">IT News</span>
+    <img src="icons/ITNews-logo.png" alt="IT News" class="logo" width="44" height="44">
+    <div class="topbar-meta">
+      <span class="dot"></span>
+      <span id="updateTime">обновляется...</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-wrap">
+    <div class="tabs-track">
+      <div class="tabs-indicator pos-0" id="tabsIndicator"></div>
+      <button class="tab active" id="tabAll" onclick="switchSource('all')">
+        <img src="icons/icons8-новости-50.png" alt="" class="tab-ico"> Все
+        <span class="count" id="cntAll">—</span>
+      </button>
+      <button class="tab" id="tabReddit" onclick="switchSource('reddit')">
+        <img src="icons/reddit-logo.png" alt="" class="tab-ico"> Reddit
+        <span class="count" id="cntReddit">—</span>
+      </button>
+      <button class="tab" id="tabHabr" onclick="switchSource('habr')">
+        <img src="icons/habr-logo.png" alt="" class="tab-ico"> Хабр
+        <span class="count" id="cntHabr">—</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="cal-bar">
+  <div class="cal-toggle" onclick="toggleCalendar()">
+    <img src="icons/icons8-планировщик-50.png" alt="" class="cal-icon">
+    <span class="cal-label" id="calLabel">Сегодня</span>
+    <span class="cal-arrow" id="calArrow">▼</span>
+  </div>
+</div>
+<div class="cal-dropdown" id="calDropdown" style="margin:0 20px 8px;display:none">
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrevMonth()">◀</button>
+    <span class="cal-month" id="calMonthLabel">Май 2026</span>
+    <button class="cal-nav-btn" onclick="calNextMonth()">▶</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-footer">
+    <button class="cal-today-btn" onclick="calGoToday()">Сегодня</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters" id="filters">
+  <button class="filter-btn active" onclick="filterNews('all',this)">
+    <img src="icons/icons8-главная-50.png" alt="" class="f-ico"> Все
+  </button>
+  <button class="filter-btn" onclick="filterNews('ai',this)">
+    <img src="icons/icons8-идея-50.png" alt="" class="f-ico"> AI
+  </button>
+  <button class="filter-btn" onclick="filterNews('security',this)">
+    <img src="icons/icons8-щит-50.png" alt="" class="f-ico"> Безопасность
+  </button>
+  <button class="filter-btn" onclick="filterNews('tech',this)">
+    <img src="icons/icons8-контроллер-50.png" alt="" class="f-ico"> Технологии
+  </button>
+  <button class="filter-btn" onclick="filterNews('dev',this)">
+    <img src="icons/icons8-настройки-50.png" alt="" class="f-ico"> Разработка
+  </button>
+  <button class="filter-btn" onclick="filterNews('business',this)">
+    <img src="icons/icons8-бизнесмен-50.png" alt="" class="f-ico"> Бизнес
+  </button>
+</div>
+
+<!-- NEWS LIST -->
+<div class="news-list" id="newsList">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Загружаем новости...</div>
+  </div>
+</div>
+
+<script>
+// ===== Swipe Navigation =====
+const SWIPE_THRESHOLD = 50;
+let _sw = { startX: 0, startY: 0, done: false };
+
+document.addEventListener('touchstart', function(e){
+  _sw.startX = e.touches[0].clientX;
+  _sw.startY = e.touches[0].clientY;
+  _sw.done = false;
+}, { passive: true });
+
+document.addEventListener('touchmove', function(e){
+  if(_sw.done) return;
+  const dx = Math.abs(e.touches[0].clientX - _sw.startX);
+  const dy = Math.abs(e.touches[0].clientY - _sw.startY);
+  if(dx > dy && dx > 10) {
+    _sw.done = true;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', function(e){
+  if(!_sw.done) return;
+  const dx = e.changedTouches[0].clientX - _sw.startX;
+  if(Math.abs(dx) < SWIPE_THRESHOLD) return;
+  const tabs = ['all', 'reddit', 'habr'];
+  const idx = tabs.indexOf(state.source);
+  if(dx < 0 && idx < tabs.length - 1) {
+    switchSource(tabs[idx + 1]);
+  } else if(dx > 0 && idx > 0) {
+    switchSource(tabs[idx - 1]);
+  }
+}, { passive: true });
+
+// ===== Telegram WebApp =====
+let tg = window.Telegram?.WebApp;
+if(tg){
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#0c0c14');
+  tg.setBackgroundColor('#0c0c14');
+}
+
+// ===== State =====
+const API_BASE = 'https://freejam.online/api';
+let state = {
+  source: 'all',
+  category: 'all',
+  selectedDay: null,
+  articles: [],
+  stats: {},
+  daysAvailable: [],
+  calMonth: new Date(),
+  calOpen: false,
+};
+
+// ===== Utils =====
+function formatNum(n){
+  n = parseInt(n) || 0;
+  return n >= 1000 ? (n/1000).toFixed(1)+'k' : n.toString();
+}
+
+function esc(s){
+  const d = document.createElement('div');
+  d.textContent = s||'';
+  return d.innerHTML;
+}
+
+function fmtDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function timeAgo(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = Date.now();
+  const diff = now - d.getTime();
+  const m = Math.floor(diff/60000);
+  if(m < 1) return 'только что';
+  if(m < 60) return m+'м назад';
+  const h = Math.floor(m/60);
+  if(h < 24) return h+'ч назад';
+  const days = Math.floor(h/24);
+  if(days < 7) return days+'д назад';
+  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+}
+
+const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+// ===== Tab Indicator =====
+function updateTabIndicator(source){
+  const indicator = document.getElementById('tabsIndicator');
+  if(!indicator) return;
+  const map = {all:0, reddit:1, habr:2};
+  const pos = map[source] || 0;
+  indicator.className = 'tabs-indicator pos-' + pos;
+}
+
+// ===== API =====
+async function fetchAPI(endpoint){
+  try{
+    const sep = endpoint.includes('?') ? '&' : '?';
+    const r = await fetch(API_BASE + endpoint + sep + '_=' + Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  }catch(e){
+    console.error('[IT News] API error:',e);
+    return null;
+  }
+}
+
+async function loadStats(){
+  const data = await fetchAPI('/stats');
+  if(!data) return;
+  state.stats = data;
+  const s = data;
+  if(document.getElementById('cntAll')) document.getElementById('cntAll').textContent = s.total_articles||0;
+  if(document.getElementById('cntReddit')) document.getElementById('cntReddit').textContent = (s.by_source&&s.by_source.reddit)||0;
+  if(document.getElementById('cntHabr')) document.getElementById('cntHabr').textContent = (s.by_source&&s.by_source.habr)||0;
+}
+
+async function loadDays(){
+  const data = await fetchAPI('/days');
+  if(!data) return;
+  state.daysAvailable = data.days||[];
+  renderCalendar();
+}
+
+async function loadArticles(){
+  const list = document.getElementById('newsList');
+  if(!list) return;
+  list.innerHTML = '<div class="loading"><div class="spinner"></div><div class="loading-text">Загружаем новости...</div></div>';
+
+  const params = new URLSearchParams();
+  params.set('source', state.source);
+  params.set('category', state.category);
+  if(state.selectedDay) params.set('day', state.selectedDay);
+
+  const data = await fetchAPI('/articles?'+params.toString());
+  if(!data){
+    list.innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Ошибка загрузки.<br>Проверьте соединение.</div></div>';
+    return;
+  }
+
+  state.articles = data.articles||[];
+  if(!state.articles.length){
+    const dayLabel = state.selectedDay?'за этот день':'сегодня';
+    list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет новостей '+dayLabel+'</div></div>';
+    return;
+  }
+  renderNews();
+}
+
+// ===== Render =====
+function renderNews(){
+  const list = document.getElementById('newsList');
+  if(!list) return;
+
+  const filtered = state.category==='all' ? state.articles : state.articles.filter(a=>a.category===state.category);
+  if(!filtered.length){
+    list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет новостей в этой категории</div></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(function(a){
+    const isHabr = a.source==='habr';
+    const isReddit = a.source==='reddit';
+    const scoreDisplay = (a.score>0?'+':'')+formatNum(a.score);
+    const metaText = isHabr?(a.hubs&&a.hubs[0]?a.hubs[0]:''):(a.subreddit?'r/'+a.subreddit:'');
+    const desc = a.lead||'';
+    const hostname = a.url?new URL(a.url).hostname.replace('www.',''):'';
+    const title = a.title_ru||a.title||'Без заголовка';
+    const timeStr = a.published_at?timeAgo(a.published_at):'';
+    const logo = isHabr?'<img src="icons/habr-logo.png" alt="">':(isReddit?'<img src="icons/reddit-logo.png" alt="">':'');
+    const sourceLabel = isHabr?'Хабр':(isReddit?'Reddit':'IT News');
+    const sourceClass = isHabr?'habr':(isReddit?'reddit':'');
+
+    return '<article class="news-card">' +
+      '<div class="card-header">' +
+        '<div class="source-badge '+sourceClass+'">'+logo+sourceLabel+'</div>' +
+        (timeStr?'<span class="card-time">'+esc(timeStr)+'</span>':'') +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-title">'+esc(title)+'</div>' +
+        (desc?'<div class="card-desc">'+esc(desc)+'</div>':'') +
+      '</div>' +
+      '<div class="card-stats">' +
+        '<div class="stat score">' +
+          '<span class="stat-ico">▲</span>' +
+          '<span>'+scoreDisplay+'</span>' +
+        '</div>' +
+        '<div class="stat comments">' +
+          '<span class="stat-ico">💬</span>' +
+          '<span>'+formatNum(a.comments||0)+'</span>' +
+        '</div>' +
+        (isHabr&&a.reading_time?'<div class="stat"><span class="stat-ico">📖</span><span>'+a.reading_time+' мин</span></div>':'') +
+        (metaText?'<div class="stat hubs">'+esc(metaText)+'</div>':'') +
+      '</div>' +
+      '<div class="card-footer">' +
+        '<a class="read-btn" href="'+esc(a.url)+'" target="_blank" rel="noopener" onclick="handleLink(this)">' +
+          'Читать на '+esc(hostname)+' <span class="arrow">→</span>' +
+        '</a>' +
+      '</div>' +
+    '</article>';
+  }).join('');
+}
+
+function handleLink(a){
+  if(tg){ tg.openLink(a.href); return false; }
+}
+
+// ===== Source / Filter =====
+function switchSource(source){
+  state.source = source;
+  state.category = 'all';
+  updateTabIndicator(source);
+  document.querySelectorAll('.tab').forEach(function(t){
+    const tid = t.id.replace('tab','').toLowerCase();
+    t.classList.toggle('active', tid===source);
+  });
+  document.querySelectorAll('.filter-btn').forEach(function(b){
+    b.classList.remove('active');
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'all'")) b.classList.add('active');
+  });
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  loadArticles();
+}
+
+function filterNews(cat,btn){
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  state.category = cat;
+  renderNews();
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+// ===== Calendar =====
+function toggleCalendar(){
+  state.calOpen = !state.calOpen;
+  const dd = document.getElementById('calDropdown');
+  const arrow = document.getElementById('calArrow');
+  if(dd) dd.style.display = state.calOpen ? 'block' : 'none';
+  if(arrow) arrow.style.transform = state.calOpen ? 'rotate(180deg)' : '';
+  if(state.calOpen) renderCalendar();
+}
+
+function renderCalendar(){
+  const grid = document.getElementById('calGrid');
+  const label = document.getElementById('calMonthLabel');
+  if(!grid||!label) return;
+
+  const d = state.calMonth;
+  const year = d.getFullYear(), month = d.getMonth();
+  label.textContent = MONTHS_RU[month]+' '+year;
+  grid.innerHTML = '';
+
+  DAYS_SHORT.forEach(function(name){
+    const el = document.createElement('div');
+    el.className = 'day-name';
+    el.textContent = name;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(year,month,1);
+  let dayOfWeek = firstDay.getDay();
+  dayOfWeek = dayOfWeek===0 ? 6 : dayOfWeek-1;
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const daysInPrevMonth = new Date(year,month,0).getDate();
+  const todayStr = fmtDate(new Date());
+
+  const newsDays = {};
+  state.daysAvailable.forEach(function(dd){ newsDays[dd.day] = true; });
+
+  for(let i=dayOfWeek-1;i>=0;i--){
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    el.textContent = daysInPrevMonth-i;
+    grid.appendChild(el);
+  }
+
+  for(let day=1;day<=daysInMonth;day++){
+    const el = document.createElement('div');
+    const dateStr = year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    el.textContent = day;
+    el.dataset.date = dateStr;
+    const cls = ['cal-day'];
+    if(dateStr===todayStr) cls.push('today');
+    if(newsDays[dateStr]) cls.push('has-news');
+    if(state.selectedDay===dateStr) cls.push('selected');
+    el.className = cls.join(' ');
+    el.addEventListener('click',function(){ selectDay(dateStr); });
+    grid.appendChild(el);
+  }
+
+  const totalCells = dayOfWeek+daysInMonth;
+  const remaining = (7-(totalCells%7))%7;
+  for(let i=0;i<remaining;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    el.textContent = i+1;
+    grid.appendChild(el);
+  }
+}
+
+function selectDay(dateStr){
+  state.selectedDay = dateStr;
+  state.calOpen = false;
+  const dd = document.getElementById('calDropdown');
+  const arrow = document.getElementById('calArrow');
+  if(dd) dd.style.display = 'none';
+  if(arrow) arrow.style.transform = '';
+
+  const label = document.getElementById('calLabel');
+  if(label){
+    if(dateStr===fmtDate(new Date())){
+      label.textContent = 'Сегодня';
+    }else{
+      const p = dateStr.split('-');
+      label.textContent = p[2]+' '+MONTHS_RU[parseInt(p[1])-1]+' '+p[0];
+    }
+  }
+
+  renderCalendar();
+  loadArticles();
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+function calPrevMonth(){
+  state.calMonth.setMonth(state.calMonth.getMonth()-1);
+  renderCalendar();
+}
+
+function calNextMonth(){
+  state.calMonth.setMonth(state.calMonth.getMonth()+1);
+  renderCalendar();
+}
+
+function calGoToday(){
+  state.calMonth = new Date();
+  selectDay(fmtDate(new Date()));
+}
+
+// Close calendar on outside click
+document.addEventListener('click',function(e){
+  const bar = document.querySelector('.cal-bar');
+  if(bar&&!bar.contains(e.target)&&state.calOpen){
+    state.calOpen = false;
+    const dd = document.getElementById('calDropdown');
+    const arrow = document.getElementById('calArrow');
+    if(dd) dd.style.display = 'none';
+    if(arrow) arrow.style.transform = '';
+  }
+});
+
+// ===== Init =====
+async function loadAll(){
+  await Promise.all([loadStats(), loadDays()]);
+  const today = fmtDate(new Date());
+  state.selectedDay = today;
+  state.calMonth = new Date();
+  await loadArticles();
+  const el = document.getElementById('updateTime');
+  if(el) el.textContent = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+loadAll();
+setInterval(loadAll,10*60*1000);
+
+// Pull-to-refresh
+let touchStartY=0;
+document.addEventListener('touchstart',function(e){
+  if(window.scrollY===0) touchStartY=e.touches[0].clientY;
+});
+document.addEventListener('touchend',function(e){
+  const diff=e.changedTouches[0].clientY-touchStartY;
+  if(diff>80&&window.scrollY===0) loadAll();
+});
+</script>
+</body>
+</html>

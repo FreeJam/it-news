@@ -25,11 +25,14 @@ from urllib.parse import urlparse, parse_qs
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'db', 'news.db')
 CORS_ORIGINS = [
-    'https://freejam.online',
     'https://t.me',
     'http://localhost',
     'http://127.0.0.1',
 ]
+# Add custom origins from env (comma-separated)
+_env_origins = os.environ.get('CORS_ORIGINS', '')
+if _env_origins:
+    CORS_ORIGINS.extend(o.strip() for o in _env_origins.split(',') if o.strip())
 
 # Simple in-memory cache: {key: (data, expiry_timestamp)}
 _cache = {}

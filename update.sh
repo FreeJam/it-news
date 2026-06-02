@@ -2,12 +2,15 @@
 # IT-News — Fetch Reddit (RSS) + Habr, save to SQLite, invalidate API cache
 set -e
 
-BASEDIR="/var/www/freejam.online/html/it-news"
+BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Random delay 0-300 seconds (0-5 min) to avoid rate limiting
 SLEEP_SEC=$((RANDOM % 301))
 echo "[$(date -Iseconds)] Sleeping ${SLEEP_SEC}s before update..."
 sleep "$SLEEP_SEC"
+
+# --- DB initialization ---
+python3 "$BASEDIR/parsers/init_db.py"
 
 echo "[$(date -Iseconds)] === IT-News Update ==="
 

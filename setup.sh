@@ -4,8 +4,8 @@
 set -e
 
 REPO_URL="https://github.com/FreeJam/it-news.git"
-INSTALL_DIR="/var/www/html/it-news"
-DOMAIN="freejam.online"
+INSTALL_DIR="${INSTALL_DIR:-/var/www/html/it-news}"
+DOMAIN="${DOMAIN:-freejam.online}"
 
 echo "=== IT-News Setup ==="
 echo ""

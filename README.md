@@ -163,9 +163,11 @@ chmod +x /root/scripts/it-news-watchdog.sh
 
 ## Переменные окружения (.env)
 
-| Переменная | Описание |
-|------------|----------|
-| `BOT_TOKEN` | Токен Telegram-бота (получить у @BotFather) |
+| Переменная | Описание | По умолчанию |
+|------------|----------|-------------|
+| `BOT_TOKEN` | Токен Telegram-бота (получить у @BotFather) | — (обязательно) |
+| `APP_URL` | URL фронтенда PWA | `https://freejam.online/it-news-app/` |
+| `CORS_ORIGINS` | Дополнительные CORS origins через запятую | `https://t.me,http://localhost` |
 
 ## Обновление
 

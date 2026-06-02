@@ -8,15 +8,14 @@ import os
 import subprocess
 from datetime import datetime
 
-import os
 import dotenv
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', 'it-news', '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 dotenv.load_dotenv(dotenv_path)
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-DATA_DIR = "/var/www/freejam.online/html/it-news"
-APP_URL = "https://freejam.online/it-news-app/"
+INSTALL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+APP_URL = os.getenv('APP_URL', 'https://freejam.online/it-news-app/')
 
 
 def api(method, data=None, files=None):
@@ -111,7 +110,7 @@ def run_update(chat_id):
     send_message(chat_id, "🔄 Запуск обновления...")
     try:
         result = subprocess.run(
-            ["bash", f"{DATA_DIR}/update.sh"],
+            ["bash", f"{INSTALL_DIR}/update.sh"],
             capture_output=True,
             text=True,
             timeout=120,

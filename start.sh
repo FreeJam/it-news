@@ -2,7 +2,7 @@
 # IT-News startup script
 # Запускает API-сервер и обновляет данные
 
-BASEDIR="/var/www/freejam.online/html/it-news"
+BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 LOG="$BASEDIR/api.log"
 
 cd "$BASEDIR"

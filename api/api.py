@@ -28,6 +28,8 @@ CORS_ORIGINS = [
     'https://t.me',
     'http://localhost',
     'http://127.0.0.1',
+    'https://freejam.online',
+    'https://it-news.freejam.online',
 ]
 # Add custom origins from env (comma-separated)
 _env_origins = os.environ.get('CORS_ORIGINS', '')

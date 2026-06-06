@@ -4,8 +4,8 @@ set -e
 
 BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Random delay 0-300 seconds (0-5 min) to avoid rate limiting
-SLEEP_SEC=$((RANDOM % 301))
+# Random delay 0-600 seconds (0-10 min) to avoid rate limiting
+SLEEP_SEC=$((RANDOM % 601))
 echo "[$(date -Iseconds)] Sleeping ${SLEEP_SEC}s before update..."
 sleep "$SLEEP_SEC"
 
